@@ -1,21 +1,42 @@
-﻿using BookStore.Models;
+﻿using BookStore.Data;
+using BookStore.Models;
+using BookStore.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookStore.Controllers
 {
     public class GenresController : Controller
     {
+
+        private readonly GenreService _service;
+
+        public GenresController(GenreService service)
+        {
+            _service = service;
+        }
+
         public IActionResult Index()
         {
-            List<Genre> genres = new List<Genre>
-            {
-                new Genre(1, "Drama"),
-                new Genre(2, "Comédia"),
-                new Genre(3, "Ação"),
-                new Genre(4, "Romance"),
-            };
+            return View(_service.FindAll());
+        }
 
-            return View(genres);
+        public IActionResult Create() 
+        {
+            return View();
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(Genre genre)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+
+            _service.Insert(genre);
+
+            return RedirectToAction(nameof(Index));
         }
     }
+
 }

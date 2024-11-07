@@ -1,4 +1,5 @@
 using BookStore.Data;
+using BookStore.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore
@@ -13,8 +14,9 @@ namespace BookStore
             
             builder.Services.AddControllersWithViews();
 
-            
-            
+            builder.Services.AddScoped<GenreService>();
+
+
             builder.Services.AddDbContext<BookstoreContext>(options =>
             {
                 options.UseMySql(
@@ -31,8 +33,7 @@ namespace BookStore
             });
 
 
-
-
+           
 
             var app = builder.Build();
 
