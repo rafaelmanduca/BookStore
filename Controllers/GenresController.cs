@@ -75,9 +75,48 @@ namespace BookStore.Controllers
 
         }
 
+		public async Task<IActionResult> Edit(int? id)
+		{
+			if (id is null)
+			{
+				return RedirectToAction(nameof(Error), new { message = "Id não fornecdo" });
+			}
+			var obj = await _service.FindByIdAsync(id.Value);
+			if (obj is null)
+			{
+				return RedirectToAction(nameof(Error), new { message = "Id não encontrado" });
+			}
+			return View(obj);
+		}
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit (int id , Genre genre)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+            
+            if (id != genre.Id)
+            {
+                return RedirectToAction(nameof(Error), new { message = "Id não condizente" });
+            }
+
+            try
+            {
+                await _service.UpdateAsync(genre);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (ApplicationException ex )
+            {
+                return RedirectToAction(nameof(Error), new { message =ex.Message});
+            }
+        }
 
 
-        public IActionResult Error(string message)
+
+		public IActionResult Error(string message)
         {
             var viewModel = new ErrorViewModel
             {
