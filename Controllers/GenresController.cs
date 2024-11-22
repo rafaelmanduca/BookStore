@@ -1,7 +1,11 @@
 ﻿using BookStore.Data;
 using BookStore.Models;
+using BookStore.Models.ViewModels;
 using BookStore.Services;
+using BookStore.Services.Exceptions;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BookStore.Controllers
 {
@@ -15,9 +19,9 @@ namespace BookStore.Controllers
             _service = service;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View(_service.FindAll());
+            return View(await _service.FindAllAsync());
         }
 
         public IActionResult Create() 
@@ -26,17 +30,121 @@ namespace BookStore.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Genre genre)
+        
+        public async Task<IActionResult> Create(Genre genre)
         {
             if (!ModelState.IsValid)
             {
                 return View();
             }
 
-            _service.Insert(genre);
+            await _service.InsertAsync(genre);
 
             return RedirectToAction(nameof(Index));
         }
+
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id is null) 
+            {
+                return RedirectToAction(nameof(Error), new { message = "Id não fornecdo" });
+            }
+            var obj = await _service.FindByIdAsync(id.Value);
+            if (obj is null)
+            {
+                return RedirectToAction(nameof(Error), new { message = "Id não encontrado" });
+            }
+            return View(obj);
+        }
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await _service.RemoveAsync(id);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (IntegrityException ex)
+            {
+                return RedirectToAction(nameof(Error), new { error = ex.Message });
+            }
+
+        }
+
+		public async Task<IActionResult> Edit(int? id)
+		{
+			if (id is null)
+			{
+				return RedirectToAction(nameof(Error), new { message = "Id não fornecdo" });
+			}
+			var obj = await _service.FindByIdAsync(id.Value);
+			if (obj is null)
+			{
+				return RedirectToAction(nameof(Error), new { message = "Id não encontrado" });
+			}
+			return View(obj);
+		}
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit (int id , Genre genre)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+            
+            if (id != genre.Id)
+            {
+                return RedirectToAction(nameof(Error), new { message = "Id não condizente" });
+            }
+
+            try
+            {
+                await _service.UpdateAsync(genre);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (ApplicationException ex )
+            {
+                return RedirectToAction(nameof(Error), new { message =ex.Message});
+            }
+        }
+
+
+        public async Task<IActionResult> Details (int? id)
+        {
+            if (id is null)
+            {
+                return RedirectToAction(nameof(Error), new { message = "Id não fornecdo" });
+            }
+            var obj = await _service.FindByIdEagerAsync(id.Value);
+            if (obj is null)
+            {
+                return RedirectToAction(nameof(Error), new { message = "Id não encontrado" });
+            }
+            return View(obj);
+        }
+
+
+
+
+
+        public IActionResult Error(string message)
+        {
+            var viewModel = new ErrorViewModel
+            {
+                Message = message,
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+            };
+            return View(viewModel);
+        }
+
+        
+
     }
 
 }
